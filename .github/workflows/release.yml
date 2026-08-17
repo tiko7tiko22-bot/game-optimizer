@@ -35,6 +35,8 @@ jobs:
           -p:PublishSingleFile=true
           -p:PublishReadyToRun=true
           -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:WindowsPackageType=None
+          -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish/win-x64
 
       - name: Copy exe for direct upload
