@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   build:
+    name: Build Windows x64
     runs-on: windows-latest
 
     steps:
@@ -24,65 +25,84 @@ jobs:
           dotnet-quality: "preview"
 
       - name: Restore
-        run: dotnet restore GameOptimizer.csproj
+        shell: powershell
+        run: |
+          dotnet restore GameOptimizer.csproj
 
       - name: Run tests
-        run: dotnet test Tests/GameOptimizer.Tests.csproj -c Release --no-restore
+        shell: powershell
+        run: |
+          dotnet test Tests/GameOptimizer.Tests.csproj `
+            -c Release `
+            --no-restore
 
       - name: Publish Gaming Optimizer
         shell: powershell
         run: |
+          if (Test-Path "publish") {
+            Remove-Item "publish" -Recurse -Force
+          }
+
           dotnet publish GameOptimizer.csproj `
             -c Release `
             -r win-x64 `
             --self-contained true `
-            -p:PublishSingleFile=true `
-            -p:PublishReadyToRun=false `
             -p:WindowsPackageType=None `
             -p:WindowsAppSDKSelfContained=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
-            -p:IncludeAllContentForSelfExtract=true `
-            -p:EnableCompressionInSingleFile=true `
+            -p:SelfContained=true `
+            -p:PublishSingleFile=false `
+            -p:PublishTrimmed=false `
+            -p:PublishReadyToRun=false `
+            -p:IncludeNativeLibrariesForSelfExtract=false `
             -o publish/win-x64
 
-      - name: Verify EXE exists
+      - name: Verify published files
         shell: powershell
         run: |
-          $exe = "publish/win-x64/GameOptimizer.exe"
+          $publish = "publish/win-x64"
+          $exe = Join-Path $publish "GameOptimizer.exe"
 
           if (!(Test-Path $exe)) {
             Write-Error "GameOptimizer.exe was not created."
-            Write-Host "Files produced:"
-            Get-ChildItem "publish/win-x64" -Recurse | Select-Object FullName, Length
+            Write-Host ""
+            Write-Host "Published files:"
+            if (Test-Path $publish) {
+              Get-ChildItem $publish -Recurse |
+                Select-Object FullName, Length, LastWriteTime |
+                Format-Table -AutoSize
+            }
             exit 1
           }
 
           Write-Host "GameOptimizer.exe found successfully."
-          Get-Item $exe | Select-Object FullName, Length, LastWriteTime
+          Write-Host ""
+          Write-Host "Published folder:"
+          Get-ChildItem $publish -Recurse |
+            Select-Object FullName, Length, LastWriteTime |
+            Format-Table -AutoSize
 
-      - name: Copy EXE to root
+      - name: Create ZIP package
         shell: powershell
         run: |
-          Copy-Item `
-            "publish/win-x64/GameOptimizer.exe" `
-            "GameOptimizer.exe" `
-            -Force
+          $zip = "GameOptimizer-win-x64.zip"
 
-      - name: Create ZIP
-        shell: powershell
-        run: |
+          if (Test-Path $zip) {
+            Remove-Item $zip -Force
+          }
+
           Compress-Archive `
             -Path "publish/win-x64/*" `
-            -DestinationPath "GameOptimizer-win-x64.zip" `
+            -DestinationPath $zip `
             -Force
 
-      - name: Upload build artifacts
+          Write-Host "Created: $zip"
+          Get-Item $zip | Select-Object FullName, Length, LastWriteTime
+
+      - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
           name: GameOptimizer-win-x64
-          path: |
-            GameOptimizer.exe
-            GameOptimizer-win-x64.zip
+          path: GameOptimizer-win-x64.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -92,6 +112,4 @@ jobs:
         with:
           name: Gaming Optimizer ${{ github.ref_name }}
           generate_release_notes: true
-          files: |
-            GameOptimizer.exe
-            GameOptimizer-win-x64.zip
+          files: GameOptimizer-win-x64.zip
