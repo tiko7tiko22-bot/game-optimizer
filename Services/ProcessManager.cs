@@ -212,36 +212,37 @@ public class ProcessManager : IDisposable
                         (suspendCandidates ??= []).Add((pid, name));
                 }
 
-                if (ActiveGames.ContainsKey(pid)) continue;
-                if (_notGamePids.ContainsKey(pid)) continue;
-                if (IsExcluded(name)) continue;
+if (ActiveGames.ContainsKey(pid)) continue;
+if (_notGamePids.ContainsKey(pid)) continue;
+if (IsExcluded(name)) continue;
 
-                var path = GetProcPath(proc);
+var path = GetProcPath(proc);
 
-                // A configured per-game profile also makes the process a real Game.
-                // This is important for emulators such as GameLoop whose EXE path
-                // is not inside a normal Steam/Epic game library.
-                var hasGameProfile = _cfg.GameProfiles.Any(p =>
-                    p.ProcessName.Equals(name, StringComparison.OrdinalIgnoreCase));
+// A process with a per-game profile is a real game target,
+// even when its executable is outside the normal game-library paths.
+// This allows emulator engines such as GameLoop to participate
+// in the complete game optimization/session pipeline.
+var hasGameProfile = _cfg.GameProfiles.Any(p =>
+    p.ProcessName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-                if (hasGameProfile || IsGamePath(path))
-                {
-                    if (ApplyGame(proc))
-                    {
-                        ActiveGames[pid] = name;
-                        _modifiedPids[pid] = 0;
-                        newGames.Add(name);
+if (hasGameProfile || IsGamePath(path))
+{
+    if (ApplyGame(proc))
+    {
+        ActiveGames[pid] = name;
+        _modifiedPids[pid] = 0;
+        newGames.Add(name);
 
-                        LogEntry?.Invoke(
-                            hasGameProfile
-                                ? $"[GAME] Profile detected: {name} (PID {pid})"
-                                : $"[GAME] Detected: {name} (PID {pid})");
-                    }
-                }
-                else if (path is not null)
-                {
-                    _notGamePids[pid] = 0;
-                }
+        LogEntry?.Invoke(
+            hasGameProfile
+                ? $"[GAME] Profile detected: {name} (PID {pid})"
+                : $"[GAME] Detected: {name} (PID {pid})");
+    }
+}
+else if (path is not null)
+{
+    _notGamePids[pid] = 0;
+}
             }
 
             // Re-apply affinity each scan to counter external tools
