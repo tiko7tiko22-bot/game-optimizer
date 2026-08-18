@@ -184,21 +184,30 @@ public class OptimizerConfig
     private static long SanitizeMask(long mask, long allCores) =>
         mask != 0 && (mask & ~allCores) == 0 ? mask : allCores;
 
-    private static OptimizerConfig CreateDefault()
-    {
-        var cfg = new OptimizerConfig();
-        var zones = AffinityCalculator.Calculate();
-        cfg.GameAffinityMask    = zones.GameMask;
-        cfg.FirefoxAffinityMask = zones.MediaMask;
-        cfg.BgAffinityMask      = zones.BgMask;
+private static OptimizerConfig CreateDefault()
+{
+    var cfg = new OptimizerConfig();
 
-        // Merge auto-detected game library paths with the hardcoded defaults
-        var detected = GameLibraryScanner.ScanAll();
-        if (detected.Count > 0)
-            cfg.GamePaths = [.. cfg.GamePaths.Union(detected, StringComparer.OrdinalIgnoreCase)];
+    cfg.GameProfiles.AddRange(
+    [
+        new() { ProcessName = "AndroidEmulatorEn", Priority = "High" },
+        new() { ProcessName = "GameLoop", Priority = "High" },
+        new() { ProcessName = "cef_frame_render", Priority = "High" },
+        new() { ProcessName = "QMEmulatorService", Priority = "High" },
+    ]);
 
-        return cfg;
-    }
+    var zones = AffinityCalculator.Calculate();
+    cfg.GameAffinityMask    = zones.GameMask;
+    cfg.FirefoxAffinityMask = zones.MediaMask;
+    cfg.BgAffinityMask      = zones.BgMask;
+
+    // Merge auto-detected game library paths with the hardcoded defaults
+    var detected = GameLibraryScanner.ScanAll();
+    if (detected.Count > 0)
+        cfg.GamePaths = [.. cfg.GamePaths.Union(detected, StringComparer.OrdinalIgnoreCase)];
+
+    return cfg;
+}
 
     public void Save()
     {
