@@ -9,7 +9,7 @@ public class OptimizerConfig
 
     /// <summary>Host pinged to measure latency and jitter.</summary>
     public string PingHost { get; set; } = "1.1.1.1";
-    public long GameAffinityMask { get; set; } = 0x0FFF;
+    public long GameAffinityMask { get; set; } = 0xFFFF;
     public long FirefoxAffinityMask { get; set; } = 0x3000;
     public long BgAffinityMask { get; set; } = 0xC000;
     public int AlertGpuTempC { get; set; } = 80;
