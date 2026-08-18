@@ -217,14 +217,25 @@ public class ProcessManager : IDisposable
                 if (IsExcluded(name)) continue;
 
                 var path = GetProcPath(proc);
-                if (IsGamePath(path))
+
+                // A configured per-game profile also makes the process a real Game.
+                // This is important for emulators such as GameLoop whose EXE path
+                // is not inside a normal Steam/Epic game library.
+                var hasGameProfile = _cfg.GameProfiles.Any(p =>
+                    p.ProcessName.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+                if (hasGameProfile || IsGamePath(path))
                 {
                     if (ApplyGame(proc))
                     {
                         ActiveGames[pid] = name;
                         _modifiedPids[pid] = 0;
                         newGames.Add(name);
-                        LogEntry?.Invoke($"[GAME] Detected: {name} (PID {pid})");
+
+                        LogEntry?.Invoke(
+                            hasGameProfile
+                                ? $"[GAME] Profile detected: {name} (PID {pid})"
+                                : $"[GAME] Detected: {name} (PID {pid})");
                     }
                 }
                 else if (path is not null)
