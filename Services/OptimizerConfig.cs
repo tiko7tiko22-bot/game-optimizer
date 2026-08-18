@@ -77,10 +77,10 @@ public class OptimizerConfig
     /// when the last auto-pinned game exits. Manual toggles always win: turning
     /// pinning off by hand while a game runs stops the automation for that game.
     /// </summary>
-    public bool AutoPinOnGameDetect { get; set; } = false;
+    public bool AutoPinOnGameDetect { get; set; } = true;
 
     /// <summary>Purge the Windows standby memory list each time a game is detected.</summary>
-    public bool AutoFlushStandbyOnGameStart { get; set; } = false;
+    public bool AutoFlushStandbyOnGameStart { get; set; } = true;
 
     /// <summary>Disable Windows Game DVR / Xbox background capture while CPU pinning is on.</summary>
     public bool DisableGameDvrWhenPinning { get; set; } = true;
