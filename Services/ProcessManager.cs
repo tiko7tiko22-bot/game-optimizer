@@ -218,6 +218,17 @@ if (IsExcluded(name)) continue;
 
 var path = GetProcPath(proc);
 
+var isGameLoopHelper =
+    ActiveGames.Values.Any(g =>
+        g.Equals("AndroidEmulatorEn", StringComparison.OrdinalIgnoreCase)) &&
+    (
+        name.Equals("GameLoop", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("cef_frame_render", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("QMEmulatorService", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("AndroidEmulatorEx", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("aow_exe", StringComparison.OrdinalIgnoreCase)
+    );
+
 // A process with a per-game profile is a real game target,
 // even when its executable is outside the normal game-library paths.
 // This allows emulator engines such as GameLoop to participate
@@ -225,7 +236,7 @@ var path = GetProcPath(proc);
 var hasGameProfile = _cfg.GameProfiles.Any(p =>
     p.ProcessName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-if (hasGameProfile || IsGamePath(path))
+if (hasGameProfile || isGameLoopHelper || IsGamePath(path))
 {
     if (ApplyGame(proc))
     {
